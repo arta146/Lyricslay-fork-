@@ -52,9 +52,9 @@ See [QUICKSTART.md](QUICKSTART.md) for the short version of this doc.
 - Draggable, adjustable font size/opacity/color, and sized to fit exactly as
   many lines of lyrics as you want (1/3/5) — not manually resizable, since
   the window's size is entirely driven by that setting instead.
-- **Fullscreen lyrics mode** — expands the transparent overlay across the
-  monitor, centers the visible lyric lines, and scales text to the screen
-  while preserving live synchronization and click-through behavior.
+- **Fullscreen lyrics mode** — expands the overlay across the monitor with an
+  opaque black background. Text size remains adjustable, and lyrics can be
+  browsed manually before returning to live playback.
 - A "locked" click-through mode so the overlay never intercepts game input.
 - Global hotkeys that work regardless of which window has focus, fully
   rebindable from the tray's *Keyboard Shortcuts…* window.
@@ -94,7 +94,9 @@ The app starts unlocked and draggable, sitting top-center by default.
 | Lock it (click-through, for gaming) | `Ctrl+Alt+L`, or tray menu → *Lock (click-through)* |
 | Show / hide | `Ctrl+Alt+H`, or tray menu → *Show/Hide overlay* |
 | Fullscreen lyrics | `Ctrl+Alt+F`, or tray menu → *Enter/Exit fullscreen lyrics* |
-| Font size | `Ctrl+Alt+↑` / `Ctrl+Alt+↓` |
+| Font size | `Ctrl+Alt+↑` / `Ctrl+Alt+↓` (also works fullscreen) |
+| Browse lyrics | `Ctrl+Alt+Shift+↑` / `Ctrl+Alt+Shift+↓` |
+| Resume live lyrics | `Ctrl+Alt+Shift+R` |
 | Opacity | `Ctrl+Alt+PageUp` / `Ctrl+Alt+PageDown` |
 | Visible lines | `Ctrl+Alt+→` / `Ctrl+Alt+←` |
 | Sync offset (this song only) | `Ctrl+Alt+,` (earlier) / `Ctrl+Alt+.` (later) |
@@ -109,11 +111,19 @@ an explanation instead of silently failing). *Reset to defaults* restores the
 table above.
 
 **Fullscreen lyrics:** `Ctrl+Alt+F` expands the overlay to the full bounds of
-whichever monitor currently contains it (including the taskbar area). The
-visible timed lyric lines are centered vertically, text scales with the screen,
-and the overlay remains fully click-through. Press the shortcut again to
-restore the previous window size and position. The mode is temporary and is
-not restored after restarting the app.
+whichever monitor currently contains it (including the taskbar area), with a
+solid black background. The font-size shortcuts (`Ctrl+Alt+↑` / `Ctrl+Alt+↓`)
+work in fullscreen too.
+
+**Browsing lyrics:** synced lyrics normally follow the current playback time
+automatically. To read an earlier or later part, use `Ctrl+Alt+Shift+↑` or
+`Ctrl+Alt+Shift+↓`; this temporarily pauses auto-follow while you browse.
+Press `Ctrl+Alt+Shift+R` to jump back to the line matching the current playback
+position. Unsynced/plain-text lyrics can be scrolled by the same up/down
+shortcuts; resume restores their automatic time-based scroll. A hint at the
+bottom of the screen shows these controls when fullscreen opens and whenever
+you use them. Press `Ctrl+Alt+F` again to restore the previous window size and
+position. The mode is temporary and is not restored after restarting the app.
 
 The window has no background panel and is click-through everywhere except the
 title/artist label top-left (which is also the drag handle) — so it floats over

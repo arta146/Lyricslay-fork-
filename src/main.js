@@ -57,6 +57,9 @@ const SHORTCUT_DEFS = [
   { id: 'toggleLocked', label: 'Lock / unlock overlay (click-through)', defaultAccelerator: 'Control+Alt+L' },
   { id: 'toggleVisible', label: 'Show / hide overlay', defaultAccelerator: 'Control+Alt+H' },
   { id: 'toggleFullscreen', label: 'Toggle fullscreen lyrics', defaultAccelerator: 'Control+Alt+F' },
+  { id: 'scrollLyricsUp', label: 'Scroll lyrics up', defaultAccelerator: 'Control+Alt+Shift+Up' },
+  { id: 'scrollLyricsDown', label: 'Scroll lyrics down', defaultAccelerator: 'Control+Alt+Shift+Down' },
+  { id: 'resumeLiveLyrics', label: 'Resume live lyrics', defaultAccelerator: 'Control+Alt+Shift+R' },
   { id: 'increaseFontSize', label: 'Increase font size', defaultAccelerator: 'Control+Alt+Up' },
   { id: 'decreaseFontSize', label: 'Decrease font size', defaultAccelerator: 'Control+Alt+Down' },
   { id: 'increaseOpacity', label: 'Increase opacity', defaultAccelerator: 'Control+Alt+PageUp' },
@@ -110,6 +113,9 @@ const SHORTCUT_HANDLERS = {
   toggleLocked: () => applyLocked(!store.get('locked')),
   toggleVisible: () => toggleVisible(),
   toggleFullscreen: () => toggleFullscreen(),
+  scrollLyricsUp: () => requestLyricsScroll(-1),
+  scrollLyricsDown: () => requestLyricsScroll(1),
+  resumeLiveLyrics: () => resumeLiveLyrics(),
   increaseFontSize: () => changeFontSize(2),
   decreaseFontSize: () => changeFontSize(-2),
   increaseOpacity: () => changeOpacity(0.05),
@@ -292,6 +298,8 @@ function toggleFullscreen() {
     win.setMinimumSize(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
     win.setMaximumSize(0, 0);
     win.setResizable(false);
+    // Font-size changes made while fullscreen are cached by applyDesiredSize.
+    if (!isOverlayFullscreen) applyDesiredSize(null);
   });
 
   // Even an unlocked overlay must not intercept input while fullscreen.
@@ -710,6 +718,19 @@ function updateTrayMenu() {
         },
         { type: 'separator' },
         {
+          label: `Scroll lyrics up (${formatAccelerator(shortcutFor('scrollLyricsUp'))})`,
+          click: () => requestLyricsScroll(-1),
+        },
+        {
+          label: `Scroll lyrics down (${formatAccelerator(shortcutFor('scrollLyricsDown'))})`,
+          click: () => requestLyricsScroll(1),
+        },
+        {
+          label: `Resume live lyrics (${formatAccelerator(shortcutFor('resumeLiveLyrics'))})`,
+          click: resumeLiveLyrics,
+        },
+        { type: 'separator' },
+        {
           label: `This song's sync offset: ${currentOffsetMs()}ms`,
           enabled: false,
         },
@@ -857,6 +878,16 @@ function changeVisibleLines(direction) {
   store.set('visibleLines', next);
   win?.webContents.send('visible-lines-changed', next);
   updateTrayMenu();
+}
+
+function requestLyricsScroll(direction) {
+  if (!win || win.isDestroyed()) return;
+  win.webContents.send('scroll-lyrics', direction);
+}
+
+function resumeLiveLyrics() {
+  if (!win || win.isDestroyed()) return;
+  win.webContents.send('resume-live-lyrics');
 }
 
 function toggleColorSwatchVisible() {

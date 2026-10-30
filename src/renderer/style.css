@@ -28,11 +28,8 @@ body {
   flex-direction: column;
   background: transparent;
   overflow: hidden;
-  /* The window has no background panel at all — this is the *only* thing
-     dimming the overlay, so it applies straight to the lyrics text itself
-     (and scales its shadow/glow with it) rather than to a box behind it. */
-  opacity: var(--opacity, 0.92);
-  transition: opacity 0.2s ease;
+  /* Opacity is applied to text regions, not the root, so fullscreen's
+     opaque background stays solid black when lyric opacity is lowered. */
 }
 
 /* Floating text, not a header bar — no background/border, same treatment as the
@@ -49,6 +46,12 @@ body {
   justify-content: space-between;
   gap: 8px;
   padding: 8px 14px 0;
+}
+
+#top-row,
+.lyrics {
+  opacity: var(--opacity, 0.92);
+  transition: opacity 0.2s ease;
 }
 
 #root:not(.locked) #track-label {
@@ -208,7 +211,37 @@ body {
 }
 
 
-/* Fullscreen remains a transparent, click-through presentation overlay. */
+/* Fullscreen is an opaque black reading surface; text opacity is independent. */
+#root.fullscreen {
+  background: #000;
+}
+
+#fullscreen-help {
+  display: none;
+}
+
+#root.fullscreen #fullscreen-help {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: 3vh;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: clamp(12px, 1.1vw, 18px);
+  text-align: center;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  text-shadow: 0 1px 4px #000;
+}
+
+#root.fullscreen.show-help #fullscreen-help {
+  opacity: 0.85;
+}
+
+/* Fullscreen is a click-through reading surface. */
 #root.fullscreen #top-row {
   display: none;
 }
@@ -226,7 +259,7 @@ body {
 
 #root.fullscreen .lyrics-line,
 #root.fullscreen .static-block {
-  font-size: clamp(26px, 4vw, 72px);
+  font-size: clamp(16px, calc(var(--font-size, 22px) * 1.6), 72px);
   line-height: 1.18;
 }
 

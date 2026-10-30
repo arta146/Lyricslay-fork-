@@ -7,6 +7,7 @@ const colorSwatch = document.getElementById('color-swatch');
 const lyricsEl = document.getElementById('lyrics');
 const lyricsInner = document.getElementById('lyrics-inner');
 const colorInput = document.getElementById('color-input');
+const fullscreenHelp = document.getElementById('fullscreen-help');
 
 const PLACEHOLDER_LABEL = 'Lyricslay';
 
@@ -30,6 +31,8 @@ let state = {
   // = earlier. Applied by subtracting it from the real position before comparing
   // against each line's timestamp — see updateActiveLine().
   offsetMs: 0,
+  manualTimedIndex: null,
+  manualStaticScroll: false,
 };
 
 // Lyrics are top-aligned (see updateActiveLine) rather than vertically centered,
@@ -102,7 +105,8 @@ function renderStaticLyrics(text) {
 
 function updateActiveLine() {
   if (!state.timed || state.timed.length === 0) return;
-  const idx = window.lyricsSync.findActiveLineIndex(state.timed, state.positionMs - state.offsetMs);
+  const playbackIdx = window.lyricsSync.findActiveLineIndex(state.timed, state.positionMs - state.offsetMs);
+  const idx = Number.isInteger(state.manualTimedIndex) ? state.manualTimedIndex : playbackIdx;
 
   if (idx === state.activeIndex) return;
   state.activeIndex = idx;
@@ -146,7 +150,7 @@ function updateActiveLine() {
 }
 
 function updateStaticScroll() {
-  if (!state.staticText || !state.durationMs) return;
+  if (state.manualStaticScroll || !state.staticText || !state.durationMs) return;
   const container = lyricsInner.parentElement;
   if (!container.classList.contains('static-scroll-host')) return;
   const block = lyricsInner.querySelector('.static-block');
@@ -155,6 +159,44 @@ function updateStaticScroll() {
   const ratio = window.lyricsSync.scrollRatio(state.positionMs, state.durationMs);
   const maxScroll = block.scrollHeight - block.clientHeight;
   if (maxScroll > 0) block.scrollTop = ratio * maxScroll;
+}
+
+let fullscreenHelpTimer = null;
+function showFullscreenHelp() {
+  if (!root.classList.contains('fullscreen') || !fullscreenHelp) return;
+  root.classList.add('show-help');
+  clearTimeout(fullscreenHelpTimer);
+  fullscreenHelpTimer = setTimeout(() => root.classList.remove('show-help'), 10000);
+}
+
+function scrollLyrics(direction) {
+  if (direction !== -1 && direction !== 1) return;
+  showFullscreenHelp();
+
+  if (state.timed && state.timed.length > 0) {
+    const playbackIndex = window.lyricsSync.findActiveLineIndex(state.timed, state.positionMs - state.offsetMs);
+    const currentIndex = Number.isInteger(state.manualTimedIndex) ? state.manualTimedIndex : Math.max(0, playbackIndex);
+    state.manualTimedIndex = Math.max(0, Math.min(state.timed.length - 1, currentIndex + direction));
+    state.activeIndex = null;
+    updateActiveLine();
+    return;
+  }
+
+  if (state.staticText) {
+    const block = lyricsInner.querySelector('.static-block');
+    if (!block) return;
+    state.manualStaticScroll = true;
+    block.scrollBy({ top: direction * Math.max(120, Math.floor(block.clientHeight * 0.75)), behavior: 'smooth' });
+  }
+}
+
+function resumeLiveLyrics() {
+  state.manualTimedIndex = null;
+  state.manualStaticScroll = false;
+  state.activeIndex = null;
+  updateActiveLine();
+  updateStaticScroll();
+  showFullscreenHelp();
 }
 
 function tick() {
@@ -202,11 +244,15 @@ function applyLyricsResult({ lyrics, error }) {
   if (error || !lyrics || lyrics.source === 'none') {
     state.timed = null;
     state.staticText = null;
+    state.manualTimedIndex = null;
+    state.manualStaticScroll = false;
     setHint('Lyrics not available for this song.');
     return;
   }
 
   state.offsetMs = lyrics.offsetMs || 0;
+  state.manualTimedIndex = null;
+  state.manualStaticScroll = false;
 
   if (lyrics.timed && lyrics.timed.length > 0) {
     state.timed = lyrics.timed;
@@ -228,6 +274,8 @@ window.overlay.onLyricsLoading(() => {
   state.timed = null;
   state.staticText = null;
   state.offsetMs = 0;
+  state.manualTimedIndex = null;
+  state.manualStaticScroll = false;
   setHint('Searching for lyrics…');
 });
 
@@ -250,12 +298,19 @@ window.overlay.onOpacityChanged((op) => {
 
 function applyFullscreen(enabled) {
   root.classList.toggle('fullscreen', !!enabled);
+  if (enabled) showFullscreenHelp();
+  else {
+    root.classList.remove('show-help');
+    clearTimeout(fullscreenHelpTimer);
+  }
   // The active line index may not have changed, but its vertical position has.
   state.activeIndex = null;
   updateActiveLine();
 }
 
 window.overlay.onFullscreenChanged(applyFullscreen);
+window.overlay.onScrollLyrics(scrollLyrics);
+window.overlay.onResumeLiveLyrics(resumeLiveLyrics);
 
 // main.js already ignores 'set-interactive' while locked (see the
 // ipcMain.on('set-interactive', ...) handler), so this flag is belt-and-
