@@ -285,6 +285,7 @@ window.overlay.onOpacityChanged((op) => {
 });
 
 function applyFullscreen(enabled) {
+  if (!enabled) resumeLiveLyrics();
   root.classList.toggle('fullscreen', !!enabled);
   // The active line index may not have changed, but its vertical position has.
   state.activeIndex = null;
@@ -292,8 +293,6 @@ function applyFullscreen(enabled) {
 }
 
 window.overlay.onFullscreenChanged(applyFullscreen);
-window.overlay.onScrollLyrics(scrollLyrics);
-
 lyricsEl.addEventListener('wheel', (event) => {
   if (!root.classList.contains('fullscreen')) return;
   event.preventDefault();

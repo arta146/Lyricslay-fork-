@@ -242,10 +242,6 @@ body {
   transform: scale(1.02);
 }
 
-#root.fullscreen .lyrics .hint {
-  font-size: clamp(18px, 2vw, 30px);
-}
-
 #root.fullscreen .static-block {
   width: 100%;
   text-align: center;

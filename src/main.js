@@ -57,9 +57,6 @@ const SHORTCUT_DEFS = [
   { id: 'toggleLocked', label: 'Lock / unlock overlay (click-through)', defaultAccelerator: 'Control+Alt+L' },
   { id: 'toggleVisible', label: 'Show / hide overlay', defaultAccelerator: 'Control+Alt+H' },
   { id: 'toggleFullscreen', label: 'Toggle fullscreen lyrics', defaultAccelerator: 'Control+Alt+F' },
-  { id: 'scrollLyricsUp', label: 'Scroll lyrics up', defaultAccelerator: 'Control+Alt+Shift+Up' },
-  { id: 'scrollLyricsDown', label: 'Scroll lyrics down', defaultAccelerator: 'Control+Alt+Shift+Down' },
-  { id: 'resumeLiveLyrics', label: 'Resume live lyrics', defaultAccelerator: 'Control+Alt+Shift+R' },
   { id: 'increaseFontSize', label: 'Increase font size', defaultAccelerator: 'Control+Alt+Up' },
   { id: 'decreaseFontSize', label: 'Decrease font size', defaultAccelerator: 'Control+Alt+Down' },
   { id: 'increaseOpacity', label: 'Increase opacity', defaultAccelerator: 'Control+Alt+PageUp' },
@@ -113,9 +110,6 @@ const SHORTCUT_HANDLERS = {
   toggleLocked: () => applyLocked(!store.get('locked')),
   toggleVisible: () => toggleVisible(),
   toggleFullscreen: () => toggleFullscreen(),
-  scrollLyricsUp: () => requestLyricsScroll(-1),
-  scrollLyricsDown: () => requestLyricsScroll(1),
-  resumeLiveLyrics: () => resumeLiveLyrics(),
   increaseFontSize: () => changeFontSize(2),
   decreaseFontSize: () => changeFontSize(-2),
   increaseOpacity: () => changeOpacity(0.05),
@@ -178,6 +172,7 @@ let lastDesiredHeightPx = null;
 let isOverlayFullscreen = false;
 let fullscreenRestoreBounds = null;
 let fullscreenDisplayId = null;
+let escapeFullscreenRegistered = false;
 
 function createLoginWindow() {
   const w = new BrowserWindow({
@@ -302,8 +297,18 @@ function toggleFullscreen() {
     if (!isOverlayFullscreen) applyDesiredSize(null);
   });
 
-  // Even an unlocked overlay must not intercept input while fullscreen.
-  win.setIgnoreMouseEvents(true, { forward: true });
+  // Capture Escape only while fullscreen, so it won't interfere with other apps otherwise.
+  if (isOverlayFullscreen && !escapeFullscreenRegistered) {
+    escapeFullscreenRegistered = globalShortcut.register('Escape', () => {
+      if (isOverlayFullscreen) toggleFullscreen();
+    });
+  } else if (!isOverlayFullscreen && escapeFullscreenRegistered) {
+    globalShortcut.unregister('Escape');
+    escapeFullscreenRegistered = false;
+  }
+
+  // The fullscreen overlay must receive wheel events; normal mode remains click-through.
+  win.setIgnoreMouseEvents(!isOverlayFullscreen, isOverlayFullscreen ? undefined : { forward: true });
   win.webContents.send('fullscreen-changed', isOverlayFullscreen);
   updateTrayMenu();
 }
@@ -717,18 +722,6 @@ function updateTrayMenu() {
           click: () => changeVisibleLines(-1),
         },
         { type: 'separator' },
-        {
-          label: `Scroll lyrics up (${formatAccelerator(shortcutFor('scrollLyricsUp'))})`,
-          click: () => requestLyricsScroll(-1),
-        },
-        {
-          label: `Scroll lyrics down (${formatAccelerator(shortcutFor('scrollLyricsDown'))})`,
-          click: () => requestLyricsScroll(1),
-        },
-        {
-          label: `Resume live lyrics (${formatAccelerator(shortcutFor('resumeLiveLyrics'))})`,
-          click: resumeLiveLyrics,
-        },
         { type: 'separator' },
         {
           label: `This song's sync offset: ${currentOffsetMs()}ms`,

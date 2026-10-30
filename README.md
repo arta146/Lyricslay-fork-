@@ -95,8 +95,8 @@ The app starts unlocked and draggable, sitting top-center by default.
 | Show / hide | `Ctrl+Alt+H`, or tray menu → *Show/Hide overlay* |
 | Fullscreen lyrics | `Ctrl+Alt+F`, or tray menu → *Enter/Exit fullscreen lyrics* |
 | Font size | `Ctrl+Alt+↑` / `Ctrl+Alt+↓` (also works fullscreen) |
-| Browse lyrics | `Ctrl+Alt+Shift+↑` / `Ctrl+Alt+Shift+↓` |
-| Resume live lyrics | `Ctrl+Alt+Shift+R` |
+| Browse lyrics in fullscreen | Mouse wheel up/down |
+| Exit fullscreen | `Esc` or `Ctrl+Alt+F` |
 | Opacity | `Ctrl+Alt+PageUp` / `Ctrl+Alt+PageDown` |
 | Visible lines | `Ctrl+Alt+→` / `Ctrl+Alt+←` |
 | Sync offset (this song only) | `Ctrl+Alt+,` (earlier) / `Ctrl+Alt+.` (later) |
@@ -116,13 +116,8 @@ solid black background. The font-size shortcuts (`Ctrl+Alt+↑` / `Ctrl+Alt+↓`
 work in fullscreen too.
 
 **Browsing lyrics:** synced lyrics normally follow the current playback time
-automatically. To read an earlier or later part, use `Ctrl+Alt+Shift+↑` or
-`Ctrl+Alt+Shift+↓`; this temporarily pauses auto-follow while you browse.
-Press `Ctrl+Alt+Shift+R` to jump back to the line matching the current playback
-position. Unsynced/plain-text lyrics can be scrolled by the same up/down
-shortcuts; in fullscreen, the mouse wheel also scrolls lyrics up or down.
-Resume restores their automatic time-based scroll. The fullscreen view has no
-on-screen control hints. Press `Ctrl+Alt+F` again to restore the previous
+automatically. To read an earlier or later part, scroll the mouse wheel up or down; this temporarily pauses auto-follow while you browse. Unsynced/plain-text lyrics scroll the same way; in fullscreen, the mouse wheel scrolls lyrics up or down. Exiting
+fullscreen with `Esc` restores automatic following and the previous
 window size and position. The mode is temporary and is not restored after
 restarting the app.
 
