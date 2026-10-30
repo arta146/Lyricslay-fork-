@@ -81,6 +81,9 @@ npm start
 Or just double-click `Start Lyricslay.vbs` — it launches the app
 without popping up a console window.
 
+To build the Windows installer from this fork, push to `feature/fullscreen-overlay`
+and download the `Lyricslay-windows-x64` artifact from the **Actions** run.
+
 ## Usage
 
 The app starts unlocked and draggable, sitting top-center by default.
