@@ -206,3 +206,39 @@ body {
 #root.paused .lyrics-line.active {
   color: rgba(var(--lyrics-color-rgb, 255, 255, 255), 0.75);
 }
+
+
+/* Fullscreen remains a transparent, click-through presentation overlay. */
+#root.fullscreen #top-row {
+  display: none;
+}
+
+#root.fullscreen .lyrics {
+  padding: 5vh 8vw;
+  align-items: flex-start;
+}
+
+#root.fullscreen .lyrics-inner {
+  width: 100%;
+  max-width: min(1500px, 90vw);
+  margin: 0 auto;
+}
+
+#root.fullscreen .lyrics-line,
+#root.fullscreen .static-block {
+  font-size: clamp(26px, 4vw, 72px);
+  line-height: 1.18;
+}
+
+#root.fullscreen .lyrics-line.active {
+  transform: scale(1.02);
+}
+
+#root.fullscreen .lyrics .hint {
+  font-size: clamp(18px, 2vw, 30px);
+}
+
+#root.fullscreen .static-block {
+  width: 100%;
+  text-align: center;
+}

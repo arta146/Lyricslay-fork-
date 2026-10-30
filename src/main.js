@@ -56,6 +56,7 @@ const MIN_WINDOW_HEIGHT = 56; // small enough that 1 visible line doesn't get cl
 const SHORTCUT_DEFS = [
   { id: 'toggleLocked', label: 'Lock / unlock overlay (click-through)', defaultAccelerator: 'Control+Alt+L' },
   { id: 'toggleVisible', label: 'Show / hide overlay', defaultAccelerator: 'Control+Alt+H' },
+  { id: 'toggleFullscreen', label: 'Toggle fullscreen lyrics', defaultAccelerator: 'Control+Alt+F' },
   { id: 'increaseFontSize', label: 'Increase font size', defaultAccelerator: 'Control+Alt+Up' },
   { id: 'decreaseFontSize', label: 'Decrease font size', defaultAccelerator: 'Control+Alt+Down' },
   { id: 'increaseOpacity', label: 'Increase opacity', defaultAccelerator: 'Control+Alt+PageUp' },
@@ -98,6 +99,9 @@ const store = new Store({
   },
 });
 
+// Preserve existing user bindings while adding defaults for newly introduced shortcuts.
+store.set('shortcuts', { ...DEFAULT_SHORTCUTS, ...(store.get('shortcuts') || {}) });
+
 // Handlers are wrapped in arrows (rather than referenced directly) purely so this
 // object can sit near SHORTCUT_DEFS, above the functions it calls — those are
 // hoisted function declarations, so the forward reference resolves fine by the
@@ -105,6 +109,7 @@ const store = new Store({
 const SHORTCUT_HANDLERS = {
   toggleLocked: () => applyLocked(!store.get('locked')),
   toggleVisible: () => toggleVisible(),
+  toggleFullscreen: () => toggleFullscreen(),
   increaseFontSize: () => changeFontSize(2),
   decreaseFontSize: () => changeFontSize(-2),
   increaseOpacity: () => changeOpacity(0.05),
@@ -163,6 +168,10 @@ let manualSearchPinnedTrack = null;
 // applyDesiredSize() can be re-run from win's 'moved' event (e.g. dragged to a
 // different-sized monitor) without needing the renderer to resend it.
 let lastDesiredHeightPx = null;
+// Fullscreen is temporary: retain normal window bounds in memory only.
+let isOverlayFullscreen = false;
+let fullscreenRestoreBounds = null;
+let fullscreenDisplayId = null;
 
 function createLoginWindow() {
   const w = new BrowserWindow({
@@ -231,6 +240,64 @@ function doLogout() {
 
 function topCenterBounds() {
   return computeAnchoredBounds('top-center', screen.getPrimaryDisplay().workArea);
+}
+
+// Expand the transparent overlay to the selected monitor without using native
+// exclusive fullscreen. display.bounds deliberately includes the taskbar.
+function toggleFullscreen() {
+  if (!win || win.isDestroyed()) return;
+
+  let targetBounds;
+  if (!isOverlayFullscreen) {
+    fullscreenRestoreBounds = win.getBounds();
+    const display = screen.getDisplayMatching(fullscreenRestoreBounds);
+    fullscreenDisplayId = display.id;
+    targetBounds = display.bounds;
+    isOverlayFullscreen = true;
+  } else {
+    const saved = fullscreenRestoreBounds;
+    const display = screen.getAllDisplays().find((item) => item.id === fullscreenDisplayId);
+    if (saved && display) {
+      // Preserve the old position/size where possible, clamping to the monitor
+      // if its resolution changed while the overlay was fullscreen.
+      const width = Math.min(saved.width, display.bounds.width);
+      const height = Math.min(saved.height, display.bounds.height);
+      const maxX = display.bounds.x + display.bounds.width - width;
+      const maxY = display.bounds.y + display.bounds.height - height;
+      targetBounds = {
+        ...saved, width, height,
+        x: Math.max(display.bounds.x, Math.min(saved.x, maxX)),
+        y: Math.max(display.bounds.y, Math.min(saved.y, maxY)),
+      };
+    } else {
+      const primary = screen.getPrimaryDisplay();
+      targetBounds = computeAnchoredBounds('top-center', primary.workArea, {
+        width: Math.min(saved?.width || 620, primary.workArea.width),
+        height: Math.min(saved?.height || 260, primary.workArea.height),
+      });
+    }
+    isOverlayFullscreen = false;
+    fullscreenRestoreBounds = null;
+    fullscreenDisplayId = null;
+  }
+
+  // Clear constraints left by prior programmatic resize operations, then
+  // restore the normal non-resizable window behavior after this transition.
+  win.setResizable(true);
+  win.setMinimumSize(1, 1);
+  win.setMaximumSize(0, 0);
+  win.setBounds(targetBounds);
+  setImmediate(() => {
+    if (!win || win.isDestroyed()) return;
+    win.setMinimumSize(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
+    win.setMaximumSize(0, 0);
+    win.setResizable(false);
+  });
+
+  // Even an unlocked overlay must not intercept input while fullscreen.
+  win.setIgnoreMouseEvents(true, { forward: true });
+  win.webContents.send('fullscreen-changed', isOverlayFullscreen);
+  updateTrayMenu();
 }
 
 // Clears `appName`'s remembered position (if it has one) so the next time
@@ -310,7 +377,7 @@ function togglePerAppPosition() {
   store.set('perAppPositionEnabled', next);
   // Snap immediately to whatever's already saved for the app currently behind
   // the overlay, rather than waiting for the next app switch to notice.
-  if (next && currentForegroundApp && win && !win.isDestroyed()) {
+  if (next && currentForegroundApp && win && !win.isDestroyed() && !isOverlayFullscreen) {
     const saved = store.get('perAppBounds')[currentForegroundApp];
     if (saved) win.setPosition(saved.x, saved.y);
   }
@@ -410,7 +477,7 @@ function createWindow() {
 }
 
 function saveBounds() {
-  if (!win || win.isDestroyed()) return;
+  if (!win || win.isDestroyed() || isOverlayFullscreen) return;
   const bounds = win.getBounds();
   store.set('bounds', bounds);
   // Whatever app the overlay was last seen sitting on top of gets this exact
@@ -443,7 +510,7 @@ function saveBounds() {
 function applyForegroundApp(processName) {
   if (!processName || processName === OWN_PROCESS_NAME || processName === SHELL_PROCESS_NAME) return;
   currentForegroundApp = processName;
-  if (!store.get('perAppPositionEnabled')) return;
+  if (isOverlayFullscreen || !store.get('perAppPositionEnabled')) return;
   const saved = store.get('perAppBounds')[processName];
   if (saved && win && !win.isDestroyed()) {
     win.setPosition(saved.x, saved.y);
@@ -597,6 +664,10 @@ function updateTrayMenu() {
       click: toggleVisible,
     },
     {
+      label: `${isOverlayFullscreen ? 'Exit' : 'Enter'} fullscreen lyrics (${formatAccelerator(shortcutFor('toggleFullscreen'))})`,
+      click: toggleFullscreen,
+    },
+    {
       label: `${locked ? 'Unlock (move)' : 'Lock (click-through)'} (${formatAccelerator(shortcutFor('toggleLocked'))})`,
       click: () => applyLocked(!locked),
     },
@@ -735,11 +806,12 @@ function updateTrayMenu() {
     { type: 'separator' },
     {
       label: 'Move to…',
+      enabled: !isOverlayFullscreen,
       click: openPositionPicker,
     },
     store.get('perAppPositionEnabled')
-      ? { label: 'Reset position', submenu: resetPositionSubmenu() }
-      : { label: 'Reset position', click: resetGlobalPosition },
+      ? { label: 'Reset position', enabled: !isOverlayFullscreen, submenu: resetPositionSubmenu() }
+      : { label: 'Reset position', enabled: !isOverlayFullscreen, click: resetGlobalPosition },
     { type: 'separator' },
     {
       label: `${startWithWindowsEnabled() ? 'Disable' : 'Enable'} start with Windows`,
@@ -1511,6 +1583,7 @@ ipcMain.handle('get-init-state', () => ({
   visibleLines: store.get('visibleLines'),
   lyricsColor: store.get('lyricsColor'),
   colorSwatchVisible: store.get('colorSwatchVisible'),
+  fullscreen: isOverlayFullscreen,
   nowPlaying: lastTrackData ?? null,
   lyrics: currentLyrics ? lyricsForDisplay(currentLyrics) : null,
 }));
@@ -1524,7 +1597,7 @@ ipcMain.handle('get-init-state', () => ({
 function applyDesiredSize(heightPx) {
   if (!win || win.isDestroyed()) return;
   if (Number.isFinite(heightPx)) lastDesiredHeightPx = heightPx;
-  if (!Number.isFinite(lastDesiredHeightPx)) return;
+  if (isOverlayFullscreen || !Number.isFinite(lastDesiredHeightPx)) return;
 
   const bounds = win.getBounds();
   const displayWorkArea = screen.getDisplayMatching(bounds).workArea;

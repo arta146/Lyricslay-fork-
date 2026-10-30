@@ -52,6 +52,9 @@ See [QUICKSTART.md](QUICKSTART.md) for the short version of this doc.
 - Draggable, adjustable font size/opacity/color, and sized to fit exactly as
   many lines of lyrics as you want (1/3/5) — not manually resizable, since
   the window's size is entirely driven by that setting instead.
+- **Fullscreen lyrics mode** — expands the transparent overlay across the
+  monitor, centers the visible lyric lines, and scales text to the screen
+  while preserving live synchronization and click-through behavior.
 - A "locked" click-through mode so the overlay never intercepts game input.
 - Global hotkeys that work regardless of which window has focus, fully
   rebindable from the tray's *Keyboard Shortcuts…* window.
@@ -87,6 +90,7 @@ The app starts unlocked and draggable, sitting top-center by default.
 | Move the overlay | Drag the title/artist label top-left, while unlocked |
 | Lock it (click-through, for gaming) | `Ctrl+Alt+L`, or tray menu → *Lock (click-through)* |
 | Show / hide | `Ctrl+Alt+H`, or tray menu → *Show/Hide overlay* |
+| Fullscreen lyrics | `Ctrl+Alt+F`, or tray menu → *Enter/Exit fullscreen lyrics* |
 | Font size | `Ctrl+Alt+↑` / `Ctrl+Alt+↓` |
 | Opacity | `Ctrl+Alt+PageUp` / `Ctrl+Alt+PageDown` |
 | Visible lines | `Ctrl+Alt+→` / `Ctrl+Alt+←` |
@@ -100,6 +104,13 @@ to one and pressing a new key combination rebinds it (a combination already
 reserved by Windows, or already used by another action here, is rejected with
 an explanation instead of silently failing). *Reset to defaults* restores the
 table above.
+
+**Fullscreen lyrics:** `Ctrl+Alt+F` expands the overlay to the full bounds of
+whichever monitor currently contains it (including the taskbar area). The
+visible timed lyric lines are centered vertically, text scales with the screen,
+and the overlay remains fully click-through. Press the shortcut again to
+restore the previous window size and position. The mode is temporary and is
+not restored after restarting the app.
 
 The window has no background panel and is click-through everywhere except the
 title/artist label top-left (which is also the drag handle) — so it floats over

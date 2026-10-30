@@ -130,7 +130,18 @@ function updateActiveLine() {
   const firstVisibleIdx = Math.max(0, idx - halfWindow);
   const firstVisible = nodes[firstVisibleIdx];
   if (firstVisible) {
-    lyricsInner.style.transform = `translateY(${-firstVisible.offsetTop}px)`;
+    if (root.classList.contains('fullscreen')) {
+      const lastVisible = nodes[Math.min(nodes.length - 1, idx + halfWindow)];
+      const lyricsStyle = getComputedStyle(lyricsEl);
+      const paddingTop = parseFloat(lyricsStyle.paddingTop) || 0;
+      const paddingBottom = parseFloat(lyricsStyle.paddingBottom) || 0;
+      const blockHeight = lastVisible.offsetTop + lastVisible.offsetHeight - firstVisible.offsetTop;
+      const availableHeight = lyricsEl.clientHeight - paddingTop - paddingBottom;
+      const centeredTop = paddingTop + Math.max(0, (availableHeight - blockHeight) / 2);
+      lyricsInner.style.transform = `translateY(${centeredTop - firstVisible.offsetTop}px)`;
+    } else {
+      lyricsInner.style.transform = `translateY(${-firstVisible.offsetTop}px)`;
+    }
   }
 }
 
@@ -237,6 +248,15 @@ window.overlay.onOpacityChanged((op) => {
   document.documentElement.style.setProperty('--opacity', op);
 });
 
+function applyFullscreen(enabled) {
+  root.classList.toggle('fullscreen', !!enabled);
+  // The active line index may not have changed, but its vertical position has.
+  state.activeIndex = null;
+  updateActiveLine();
+}
+
+window.overlay.onFullscreenChanged(applyFullscreen);
+
 // main.js already ignores 'set-interactive' while locked (see the
 // ipcMain.on('set-interactive', ...) handler), so this flag is belt-and-
 // suspenders — skipping the hit-test entirely while locked means there's no
@@ -285,7 +305,13 @@ function pointInRect(x, y, rect) {
 // track-label no longer has flex-grow (see style.css), so its own box already
 // hugs its text — no need to separately measure the rendered glyphs here.
 document.addEventListener('mousemove', (e) => {
-  if (isPressed || locked) return;
+  if (isPressed || locked || root.classList.contains('fullscreen')) {
+    if (isOverTopRow) {
+      isOverTopRow = false;
+      window.overlay.setInteractive(false);
+    }
+    return;
+  }
   let over = pointInRect(e.clientX, e.clientY, trackLabel.getBoundingClientRect());
   if (!over && colorSwatch.style.display !== 'none') {
     over = pointInRect(e.clientX, e.clientY, colorSwatch.getBoundingClientRect());
@@ -341,6 +367,7 @@ window.overlay.getInitState().then((s) => {
   colorInput.value = s.lyricsColor;
   colorSwatch.style.display = s.colorSwatchVisible ? '' : 'none';
   root.classList.toggle('locked', s.locked);
+  applyFullscreen(s.fullscreen);
   state.visibleLines = s.visibleLines;
   syncWindowHeight();
 
