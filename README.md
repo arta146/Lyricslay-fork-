@@ -120,10 +120,11 @@ automatically. To read an earlier or later part, use `Ctrl+Alt+Shift+↑` or
 `Ctrl+Alt+Shift+↓`; this temporarily pauses auto-follow while you browse.
 Press `Ctrl+Alt+Shift+R` to jump back to the line matching the current playback
 position. Unsynced/plain-text lyrics can be scrolled by the same up/down
-shortcuts; resume restores their automatic time-based scroll. A hint at the
-bottom of the screen shows these controls when fullscreen opens and whenever
-you use them. Press `Ctrl+Alt+F` again to restore the previous window size and
-position. The mode is temporary and is not restored after restarting the app.
+shortcuts; in fullscreen, the mouse wheel also scrolls lyrics up or down.
+Resume restores their automatic time-based scroll. The fullscreen view has no
+on-screen control hints. Press `Ctrl+Alt+F` again to restore the previous
+window size and position. The mode is temporary and is not restored after
+restarting the app.
 
 The window has no background panel and is click-through everywhere except the
 title/artist label top-left (which is also the drag handle) — so it floats over
