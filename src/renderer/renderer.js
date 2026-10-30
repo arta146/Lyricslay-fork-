@@ -137,7 +137,7 @@ function updateActiveLine() {
       const paddingBottom = parseFloat(lyricsStyle.paddingBottom) || 0;
       const blockHeight = lastVisible.offsetTop + lastVisible.offsetHeight - firstVisible.offsetTop;
       const availableHeight = lyricsEl.clientHeight - paddingTop - paddingBottom;
-      const centeredTop = paddingTop + Math.max(0, (availableHeight - blockHeight) / 2);
+      const centeredTop = Math.max(0, (availableHeight - blockHeight) / 2);
       lyricsInner.style.transform = `translateY(${centeredTop - firstVisible.offsetTop}px)`;
     } else {
       lyricsInner.style.transform = `translateY(${-firstVisible.offsetTop}px)`;
