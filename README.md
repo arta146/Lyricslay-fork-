@@ -52,6 +52,9 @@ See [QUICKSTART.md](QUICKSTART.md) for the short version of this doc.
 - Draggable, adjustable font size/opacity/color, and sized to fit exactly as
   many lines of lyrics as you want (1/3/5) — not manually resizable, since
   the window's size is entirely driven by that setting instead.
+- **Fullscreen lyrics mode** — expands the overlay across the monitor with an
+  opaque black background. Text size remains adjustable, and lyrics can be
+  browsed manually before returning to live playback.
 - A "locked" click-through mode so the overlay never intercepts game input.
 - Global hotkeys that work regardless of which window has focus, fully
   rebindable from the tray's *Keyboard Shortcuts…* window.
@@ -78,6 +81,9 @@ npm start
 Or just double-click `Start Lyricslay.vbs` — it launches the app
 without popping up a console window.
 
+To build the Windows installer from this fork, push to `feature/fullscreen-overlay`
+and download the `Lyricslay-windows-x64` artifact from the **Actions** run.
+
 ## Usage
 
 The app starts unlocked and draggable, sitting top-center by default.
@@ -87,7 +93,10 @@ The app starts unlocked and draggable, sitting top-center by default.
 | Move the overlay | Drag the title/artist label top-left, while unlocked |
 | Lock it (click-through, for gaming) | `Ctrl+Alt+L`, or tray menu → *Lock (click-through)* |
 | Show / hide | `Ctrl+Alt+H`, or tray menu → *Show/Hide overlay* |
-| Font size | `Ctrl+Alt+↑` / `Ctrl+Alt+↓` |
+| Fullscreen lyrics | `Ctrl+Alt+F`, or tray menu → *Enter/Exit fullscreen lyrics* |
+| Font size | `Ctrl+Alt+↑` / `Ctrl+Alt+↓` (also works fullscreen) |
+| Browse lyrics in fullscreen | Mouse wheel up/down |
+| Exit fullscreen | `Esc` or `Ctrl+Alt+F` |
 | Opacity | `Ctrl+Alt+PageUp` / `Ctrl+Alt+PageDown` |
 | Visible lines | `Ctrl+Alt+→` / `Ctrl+Alt+←` |
 | Sync offset (this song only) | `Ctrl+Alt+,` (earlier) / `Ctrl+Alt+.` (later) |
@@ -100,6 +109,17 @@ to one and pressing a new key combination rebinds it (a combination already
 reserved by Windows, or already used by another action here, is rejected with
 an explanation instead of silently failing). *Reset to defaults* restores the
 table above.
+
+**Fullscreen lyrics:** `Ctrl+Alt+F` expands the overlay to the full bounds of
+whichever monitor currently contains it (including the taskbar area), with a
+solid black background. The font-size shortcuts (`Ctrl+Alt+↑` / `Ctrl+Alt+↓`)
+work in fullscreen too.
+
+**Browsing lyrics:** synced lyrics normally follow the current playback time
+automatically. To read an earlier or later part, scroll the mouse wheel up or down; this temporarily pauses auto-follow while you browse. Unsynced/plain-text lyrics scroll the same way; in fullscreen, the mouse wheel scrolls lyrics up or down. Exiting
+fullscreen with `Esc` restores automatic following and the previous
+window size and position. The mode is temporary and is not restored after
+restarting the app.
 
 The window has no background panel and is click-through everywhere except the
 title/artist label top-left (which is also the drag handle) — so it floats over

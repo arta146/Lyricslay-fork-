@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('overlay', {
   setInteractive: (interactive) => ipcRenderer.send('set-interactive', interactive),
   setPickerOpen: (open) => ipcRenderer.send('set-picker-open', open),
 
+  onFullscreenChanged: (cb) => ipcRenderer.on('fullscreen-changed', (_e, enabled) => cb(enabled)),
+  onScrollLyrics: (cb) => ipcRenderer.on('scroll-lyrics', (_e, direction) => cb(direction)),
+  onResumeLiveLyrics: (cb) => ipcRenderer.on('resume-live-lyrics', () => cb()),
+
   onNowPlaying: (cb) => ipcRenderer.on('now-playing', (_e, data) => cb(data)),
   onLyricsLoading: (cb) => ipcRenderer.on('lyrics-loading', (_e, data) => cb(data)),
   onLyricsResult: (cb) => ipcRenderer.on('lyrics-result', (_e, data) => cb(data)),
