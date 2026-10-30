@@ -7,7 +7,6 @@ const colorSwatch = document.getElementById('color-swatch');
 const lyricsEl = document.getElementById('lyrics');
 const lyricsInner = document.getElementById('lyrics-inner');
 const colorInput = document.getElementById('color-input');
-const fullscreenHelp = document.getElementById('fullscreen-help');
 
 const PLACEHOLDER_LABEL = 'Lyricslay';
 
@@ -161,18 +160,8 @@ function updateStaticScroll() {
   if (maxScroll > 0) block.scrollTop = ratio * maxScroll;
 }
 
-let fullscreenHelpTimer = null;
-function showFullscreenHelp() {
-  if (!root.classList.contains('fullscreen') || !fullscreenHelp) return;
-  root.classList.add('show-help');
-  clearTimeout(fullscreenHelpTimer);
-  fullscreenHelpTimer = setTimeout(() => root.classList.remove('show-help'), 10000);
-}
-
 function scrollLyrics(direction) {
   if (direction !== -1 && direction !== 1) return;
-  showFullscreenHelp();
-
   if (state.timed && state.timed.length > 0) {
     const playbackIndex = window.lyricsSync.findActiveLineIndex(state.timed, state.positionMs - state.offsetMs);
     const currentIndex = Number.isInteger(state.manualTimedIndex) ? state.manualTimedIndex : Math.max(0, playbackIndex);
@@ -196,7 +185,6 @@ function resumeLiveLyrics() {
   state.activeIndex = null;
   updateActiveLine();
   updateStaticScroll();
-  showFullscreenHelp();
 }
 
 function tick() {
@@ -298,11 +286,6 @@ window.overlay.onOpacityChanged((op) => {
 
 function applyFullscreen(enabled) {
   root.classList.toggle('fullscreen', !!enabled);
-  if (enabled) showFullscreenHelp();
-  else {
-    root.classList.remove('show-help');
-    clearTimeout(fullscreenHelpTimer);
-  }
   // The active line index may not have changed, but its vertical position has.
   state.activeIndex = null;
   updateActiveLine();
@@ -310,6 +293,13 @@ function applyFullscreen(enabled) {
 
 window.overlay.onFullscreenChanged(applyFullscreen);
 window.overlay.onScrollLyrics(scrollLyrics);
+
+lyricsEl.addEventListener('wheel', (event) => {
+  if (!root.classList.contains('fullscreen')) return;
+  event.preventDefault();
+  if (Math.abs(event.deltaY) < 1) return;
+  scrollLyrics(event.deltaY < 0 ? -1 : 1);
+}, { passive: false });
 window.overlay.onResumeLiveLyrics(resumeLiveLyrics);
 
 // main.js already ignores 'set-interactive' while locked (see the
